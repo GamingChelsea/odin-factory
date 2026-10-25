@@ -12,20 +12,26 @@ GRID_SIZE :: 32
 Tile :: enum {
 	Air,
 	Grass,
+	Dirt,
 	Conveyor,
 }
 
+Layers :: enum {
+	Ground,
+	Objects,
+}
+
 World :: struct {
-	grid:        [GRID_WIDTH][GRID_HEIGHT]Tile,
+	grid:        [GRID_WIDTH][GRID_HEIGHT][Layers]Tile,
 	grid_center: rl.Vector2,
 }
 
 init_world :: proc() -> World {
 	textures: map[string]rl.Texture = make(map[string]rl.Texture2D)
-	grid: [GRID_WIDTH][GRID_HEIGHT]Tile
+	grid: [GRID_WIDTH][GRID_HEIGHT][Layers]Tile
 	for w in 0 ..< GRID_WIDTH {
 		for h in 0 ..< GRID_HEIGHT {
-			grid[w][h] = .Grass
+			grid[w][h][.Ground] = .Grass
 		}
 	}
 	grid_center: [2]f32 = {f32(GRID_WIDTH * GRID_SIZE) / 2.0, f32(GRID_HEIGHT * GRID_SIZE) / 2.0}
@@ -43,16 +49,29 @@ is_valid_grid_pos :: proc(pos: [2]i32) -> bool {
 }
 
 set_grid_tile :: proc(pos: [2]i32, tile: Tile, world: ^World) {
+	layer := Layers.Ground
+	switch tile {
+	case .Air:
+		layer = .Objects
+	case .Grass:
+		layer = .Ground
+	case .Dirt:
+		layer = .Ground
+	case .Conveyor:
+		layer = .Objects
+	}
 	if !is_valid_grid_pos(pos) do return
-	world.grid[pos.x][pos.y] = tile
+	world.grid[pos.x][pos.y][layer] = tile
 }
 
-get_grid_texture :: proc(pos: [2]i32, app: ^App) -> rl.Texture2D {
-	switch app.world.grid[pos.x][pos.y] {
+get_grid_texture :: proc(pos: [2]i32, layer: Layers, app: ^App) -> rl.Texture2D {
+	switch app.world.grid[pos.x][pos.y][layer] {
 	case .Air:
 		return load_texture("air", app)
 	case .Grass:
 		return load_texture("grass", app)
+	case .Dirt:
+		return load_texture("dirt", app)
 	case .Conveyor:
 		return load_texture("conveyor", app)
 	}

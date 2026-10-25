@@ -23,6 +23,11 @@ draw_gui :: proc(app: ^App) {
 			}
 		case 1:
 			{
+				texture = load_texture("dirt", app)
+				tile = .Dirt
+			}
+		case 2:
+			{
 				texture = load_texture("conveyor", app)
 				tile = .Conveyor
 			}

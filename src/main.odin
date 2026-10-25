@@ -69,12 +69,22 @@ main :: proc() {
 		rl.ClearBackground({123, 179, 85, 255})
 		rl.BeginMode2D(camera)
 
-		// Draw Grid
+		// Draw Grid Ground
 		for w in 0 ..< GRID_WIDTH {
 			for h in 0 ..< GRID_HEIGHT {
 				x := i32(w * GRID_SIZE)
 				y := i32(h * GRID_SIZE)
-				texture := get_grid_texture({i32(w), i32(h)}, app)
+				texture := get_grid_texture({i32(w), i32(h)}, .Ground, app)
+
+				rl.DrawTextureV(texture, {f32(x), f32(y)}, rl.WHITE)
+			}
+		}
+		// Draw Grid Objects
+		for w in 0 ..< GRID_WIDTH {
+			for h in 0 ..< GRID_HEIGHT {
+				x := i32(w * GRID_SIZE)
+				y := i32(h * GRID_SIZE)
+				texture := get_grid_texture({i32(w), i32(h)}, .Objects, app)
 
 				rl.DrawTextureV(texture, {f32(x), f32(y)}, rl.WHITE)
 			}
