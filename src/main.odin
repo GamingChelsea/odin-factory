@@ -5,42 +5,44 @@ import "core:math/linalg"
 import rl "vendor:raylib"
 
 main :: proc() {
-	screenWidth :: 1280
-	screenHeight :: 720
+	windowWidth :: 1280
+	windowHeight :: 720
 
-
-	rl.InitWindow(screenWidth, screenHeight, "Odin Factory Game")
+	rl.SetConfigFlags({.WINDOW_RESIZABLE})
+	rl.InitWindow(windowWidth, windowHeight, "Odin Factory Game")
 	defer rl.CloseWindow()
-
 	rl.SetTargetFPS(120)
 
+
 	camera := rl.Camera2D {
-		offset   = {screenWidth / 2.0, screenHeight / 2.0},
+		offset   = {windowWidth / 2.0, windowHeight / 2.0},
 		target   = {0, 0},
 		rotation = 0.0,
 		zoom     = 1.0,
 	}
 
-	world := init_world()
-
-	camera.target = world.grid_center
-
-	player := Player {
-		pos     = world.grid_center,
-		texture = rl.LoadTexture("assets/penguin.png"),
+	app := new(App)
+	defer {
+		delete(app.textures)
+		free(app)
 	}
+	init_app(app)
 
+	camera.target = app.world.grid_center
 
 	for !rl.WindowShouldClose() {
+		if rl.IsWindowResized() {
+			camera.offset = {f32(rl.GetScreenWidth()) / 2, f32(rl.GetScreenHeight()) / 2}
+		}
 
 		if rl.IsMouseButtonDown(.LEFT) {
 			mouse_pos := rl.GetMousePosition()
 			click_pos := click_to_grid(camera)
-			set_grid_tile(click_pos, Tile.Grass, &world)
+			set_grid_tile(click_pos, app.player.current_selected, &app.world)
 		} else if rl.IsMouseButtonDown(.RIGHT) {
 			mouse_pos := rl.GetMousePosition()
 			click_pos := click_to_grid(camera)
-			set_grid_tile(click_pos, Tile.Air, &world)
+			set_grid_tile(click_pos, Tile.Air, &app.world)
 		}
 
 		if rl.IsKeyPressed(.RIGHT_BRACKET) do camera.zoom += 0.2
@@ -57,14 +59,14 @@ main :: proc() {
 		}
 
 		speed: f32 = 120.0 * rl.GetFrameTime()
-		player.pos.x += move.x * speed
-		player.pos.y += move.y * speed
+		app.player.pos.x += move.x * speed
+		app.player.pos.y += move.y * speed
 
-		camera.target = {player.pos.x, player.pos.y}
+		camera.target = {app.player.pos.x, app.player.pos.y}
 
 
 		rl.BeginDrawing()
-		rl.ClearBackground({160, 200, 255, 255})
+		rl.ClearBackground({133, 199, 105, 255})
 		rl.BeginMode2D(camera)
 
 		// Draw Grid
@@ -72,21 +74,24 @@ main :: proc() {
 			for h in 0 ..< GRID_HEIGHT {
 				x := i32(w * GRID_SIZE)
 				y := i32(h * GRID_SIZE)
-				texture := get_grid_texture({i32(w), i32(h)}, &world)
+				texture := get_grid_texture({i32(w), i32(h)}, app)
 
 				rl.DrawTextureV(texture, {f32(x), f32(y)}, rl.WHITE)
 			}
 		}
 
-
 		// Draw Player
 		rl.DrawTextureV(
-			player.texture,
-			player.pos - {f32(player.texture.width), f32(player.texture.height)} / 2,
+			app.player.texture,
+			app.player.pos - {f32(app.player.texture.width), f32(app.player.texture.height)} / 2,
 			rl.WHITE,
 		)
 
 		rl.EndMode2D()
+
+		// GUI
+		draw_gui(app)
+
 		rl.EndDrawing()
 		free_all(context.temp_allocator)
 	}

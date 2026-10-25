@@ -12,10 +12,10 @@ GRID_SIZE :: 32
 Tile :: enum {
 	Air,
 	Grass,
+	Conveyor,
 }
 
 World :: struct {
-	textures:    map[string]rl.Texture,
 	grid:        [GRID_WIDTH][GRID_HEIGHT]Tile,
 	grid_center: rl.Vector2,
 }
@@ -30,23 +30,7 @@ init_world :: proc() -> World {
 	}
 	grid_center: [2]f32 = {f32(GRID_WIDTH * GRID_SIZE) / 2.0, f32(GRID_HEIGHT * GRID_SIZE) / 2.0}
 
-	return World{textures, grid, grid_center}
-}
-
-load_texture :: proc(name: string, world: ^World) -> rl.Texture {
-	if t, t_ok := world.textures[name]; t_ok {
-		return t
-	}
-
-	file_path := fmt.ctprintf("assets/%s.png", name)
-	t := rl.LoadTexture(file_path)
-
-	if t.id != 0 {
-		cached_name := strings.clone(name)
-		world.textures[cached_name] = t
-	}
-
-	return t
+	return World{grid, grid_center}
 }
 
 click_to_grid :: proc(camera: rl.Camera2D) -> [2]i32 {
@@ -63,12 +47,14 @@ set_grid_tile :: proc(pos: [2]i32, tile: Tile, world: ^World) {
 	world.grid[pos.x][pos.y] = tile
 }
 
-get_grid_texture :: proc(pos: [2]i32, world: ^World) -> rl.Texture2D {
-	switch world.grid[pos.x][pos.y] {
+get_grid_texture :: proc(pos: [2]i32, app: ^App) -> rl.Texture2D {
+	switch app.world.grid[pos.x][pos.y] {
 	case .Air:
-		return load_texture("air", world)
+		return load_texture("air", app)
 	case .Grass:
-		return load_texture("grass", world)
+		return load_texture("grass", app)
+	case .Conveyor:
+		return load_texture("conveyor", app)
 	}
 	return {}
 }
