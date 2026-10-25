@@ -22,15 +22,15 @@ main :: proc() {
 	}
 
 	app := new(App)
-	defer {
-		delete(app.textures)
-		free(app)
-	}
 	init_app(app)
+	defer cleanup_app(app)
 
 	camera.target = app.world.grid_center
 
 	for !rl.WindowShouldClose() {
+		dt := rl.GetFrameTime()
+		update_animated_texture(&app.conveyor_anim, dt)
+
 		if rl.IsWindowResized() {
 			camera.offset = {f32(rl.GetScreenWidth()) / 2, f32(rl.GetScreenHeight()) / 2}
 		}
@@ -66,7 +66,7 @@ main :: proc() {
 
 
 		rl.BeginDrawing()
-		rl.ClearBackground({133, 199, 105, 255})
+		rl.ClearBackground({123, 179, 85, 255})
 		rl.BeginMode2D(camera)
 
 		// Draw Grid
