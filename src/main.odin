@@ -35,14 +35,18 @@ main :: proc() {
 			camera.offset = {f32(rl.GetScreenWidth()) / 2, f32(rl.GetScreenHeight()) / 2}
 		}
 
-		if rl.IsMouseButtonDown(.LEFT) {
-			mouse_pos := rl.GetMousePosition()
+
+		if rl.IsMouseButtonPressed(.LEFT) {
 			click_pos := click_to_grid(camera)
 			set_grid_tile(click_pos, app.player.current_selected, &app.world)
 		} else if rl.IsMouseButtonDown(.RIGHT) {
-			mouse_pos := rl.GetMousePosition()
 			click_pos := click_to_grid(camera)
 			set_grid_tile(click_pos, Tile.Air, &app.world)
+		}
+
+		if rl.IsKeyDown(.Z) {
+			gird_mouse_pos := click_to_grid(camera)
+			place_item(.Dirt, gird_mouse_pos, &app.world)
 		}
 
 		if rl.IsKeyPressed(.RIGHT_BRACKET) do camera.zoom += 0.2
@@ -82,11 +86,38 @@ main :: proc() {
 		// Draw Grid Objects
 		for w in 0 ..< GRID_WIDTH {
 			for h in 0 ..< GRID_HEIGHT {
+				tile := app.world.grid[w][h][.Objects]
+				if tile == .Air || tile == .Conveyor do continue
+
 				x := i32(w * GRID_SIZE)
 				y := i32(h * GRID_SIZE)
 				texture := get_grid_texture({i32(w), i32(h)}, .Objects, app)
-
 				rl.DrawTextureV(texture, {f32(x), f32(y)}, rl.WHITE)
+			}
+		}
+
+		// Draw Conveyor
+		conveyor_tex := load_texture("conveyor", app)
+		for &conveyor in app.world.conveyors {
+			dir := get_orientation_dir(conveyor.orientation)
+
+			for step in 0 ..< conveyor.length {
+				tile_grid_x := conveyor.start.x + (dir.x * i32(step))
+				tile_grid_y := conveyor.start.y + (dir.y * i32(step))
+				tile_pos := rl.Vector2{f32(tile_grid_x * GRID_SIZE), f32(tile_grid_y * GRID_SIZE)}
+
+				rl.DrawTextureV(conveyor_tex, tile_pos, rl.WHITE)
+			}
+		}
+
+		// Draw Items
+		for w in 0 ..< GRID_WIDTH {
+			for h in 0 ..< GRID_HEIGHT {
+				x := i32(w * GRID_SIZE)
+				y := i32(h * GRID_SIZE)
+				texture := get_item_texture({i32(w), i32(h)}, app)
+
+				rl.DrawTextureEx(texture, {f32(x), f32(y)}, 0.0, 0.45, rl.WHITE)
 			}
 		}
 
